@@ -1,175 +1,572 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <title>AI Health Assistant - NeuraX</title>
-    <script src="https://cdn.tailwindcss.com?v=2.0"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=2.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='neurax-theme.css') }}">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        * {
-            font-family: 'Inter', sans-serif;
+        /* Animated Gradient Background */
+        .hero-gradient {
+            background: linear-gradient(-45deg, #6366f1, #8b5cf6, #a855f7, #ec4899);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
         }
-        .patient-sidebar {
-            background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%) !important;
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
-        .neurax-gradient {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%) !important;
+
+        /* Sidebar with glassmorphism */
+        .sidebar-modern {
+            background: linear-gradient(180deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
         }
-        .gradient-bg {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+
+        .sidebar-item {
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
         }
-        .patient-sidebar {
-            background: linear-gradient(180deg, #4f46e5 0%, #6366f1 50%, #8b5cf6 100%) !important;
+
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-left-color: #a855f7;
+            transform: translateX(4px);
+        }
+
+        .sidebar-item.active {
+            background: linear-gradient(90deg, rgba(168, 85, 247, 0.3) 0%, transparent 100%);
+            border-left-color: #f0abfc;
+        }
+
+        /* Icon backgrounds */
+        .icon-gradient-1 {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        }
+
+        .icon-gradient-2 {
+            background: linear-gradient(135deg, #ec4899, #f43f5e);
+        }
+
+        /* AI bubbles */
+        .ai-bubble {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border: 1px solid #e2e8f0;
+        }
+
+        .user-bubble {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        }
+
+        /* Typing indicator */
+        .typing-dot {
+            animation: typingBounce 1.4s ease-in-out infinite both;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingBounce {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0.6);
+                opacity: 0.5;
+            }
+
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Pulse animation for AI icon */
+        .pulse-ring {
+            animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+
+            100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+        }
+
+        /* Tab styles */
+        .tab-btn {
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+
+        .tab-btn:not(.active) {
+            background: white;
+            color: #6366f1;
+            border: 2px solid #e2e8f0;
+        }
+
+        .tab-btn:not(.active):hover {
+            border-color: #8b5cf6;
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Sidebar -->
-    <div class="fixed inset-y-0 left-0 w-64 patient-sidebar text-white shadow-2xl z-50 overflow-y-auto" style="background: linear-gradient(180deg, #4f46e5 0%, #6366f1 50%, #8b5cf6 100%);">
-        <div class="p-6 border-b border-indigo-400 border-opacity-30">
-            <div class="flex flex-col items-center mb-4">
-                <div class="mb-4">
-                    <h2 class="text-2xl font-extrabold text-white">Neura<span class="text-purple-300">X</span></h2>
-                    <p class="text-xs text-indigo-200 text-center">Healthcare Intelligence</p>
-                </div>
-                <div id="profilePictureContainer" class="w-20 h-20 rounded-full bg-white bg-opacity-20 flex items-center justify-center mb-3 overflow-hidden shadow-lg border-2 border-white border-opacity-30">
-                    <img id="profilePicture" src="" alt="Profile" class="w-full h-full object-cover hidden">
-                    <svg id="profilePlaceholder" class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+
+<body class="bg-slate-100 min-h-screen">
+    <!-- Modern Sidebar -->
+    <div class="fixed inset-y-0 left-0 w-72 sidebar-modern text-white shadow-2xl z-50 flex flex-col">
+        <!-- Logo Section -->
+        <div class="p-6 border-b border-purple-500/30">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 rounded-xl icon-gradient-1 flex items-center justify-center shadow-lg">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z">
+                        </path>
                     </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black">Neura<span class="text-purple-300">X</span></h1>
+                    <p class="text-xs text-purple-300/80">Healthcare Intelligence</p>
+                </div>
+            </div>
+
+            <!-- Profile Section -->
+            <div class="flex flex-col items-center py-4">
+                <div id="profilePictureContainer"
+                    class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 p-1 mb-3 shadow-xl">
+                    <div id="profileImageWrapper"
+                        class="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                        <img id="profilePicture" src="" alt="Profile" class="w-full h-full object-cover hidden">
+                        <svg id="profilePlaceholder" class="w-10 h-10 text-purple-300" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                    </div>
                 </div>
                 <h3 class="font-bold text-lg">{{ user.full_name or 'Patient' }}</h3>
-                <p class="text-indigo-200 text-sm">Patient Portal</p>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <p class="text-purple-300 text-sm">Patient Portal</p>
+                </div>
             </div>
         </div>
-        <nav class="mt-4">
-            <a href="/patient/dashboard" class="flex items-center px-6 py-3 text-white hover:bg-indigo-600 hover:bg-opacity-30 transition">
-                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                </svg>
-                Dashboard
+
+        <!-- Navigation - scrollable middle section -->
+        <nav class="flex-1 overflow-y-auto p-4 space-y-2">
+            <a href="/patient/dashboard"
+                class="sidebar-item flex items-center px-4 py-3 rounded-xl text-purple-200 hover:text-white">
+                <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center mr-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                        </path>
+                    </svg>
+                </div>
+                <span class="font-medium">Dashboard</span>
             </a>
-            <a href="/patient/appointments" class="flex items-center px-6 py-3 text-white hover:bg-indigo-600 hover:bg-opacity-30 transition">
-                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-                My Appointments
+            <a href="/patient/appointments"
+                class="sidebar-item flex items-center px-4 py-3 rounded-xl text-purple-200 hover:text-white">
+                <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center mr-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                </div>
+                <span class="font-medium">My Appointments</span>
             </a>
-            <a href="/patient/chat" class="flex items-center px-6 py-3 text-white hover:bg-indigo-600 hover:bg-opacity-30 transition">
-                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                </svg>
-                Chat with Doctors
+            <a href="/patient/chat"
+                class="sidebar-item flex items-center px-4 py-3 rounded-xl text-purple-200 hover:text-white">
+                <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center mr-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                        </path>
+                    </svg>
+                </div>
+                <span class="font-medium">Chat with Doctors</span>
             </a>
-            <a href="/patient/ai-assistant" class="flex items-center px-6 py-3 bg-indigo-600 bg-opacity-40 text-white border-l-4 border-purple-300 shadow-lg">
-                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                </svg>
-                AI Health Assistant
+            <a href="/patient/ai-assistant" class="sidebar-item active flex items-center px-4 py-3 rounded-xl">
+                <div class="w-10 h-10 rounded-lg icon-gradient-2 flex items-center justify-center mr-3 shadow">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                        </path>
+                    </svg>
+                </div>
+                <span class="font-semibold">AI Health Assistant</span>
             </a>
-            <a href="#" onclick="event.preventDefault(); showProfileModal();" class="flex items-center px-6 py-3 text-white hover:bg-indigo-600 hover:bg-opacity-30 transition">
-                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                </svg>
-                My Profile
-            </a>
-            <a href="/logout" class="flex items-center px-6 py-3 text-white hover:bg-red-500 hover:bg-opacity-30 transition absolute bottom-0 w-full border-t border-indigo-400 border-opacity-30">
-                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                </svg>
-                Logout
+            <a href="/patient/profile"
+                class="sidebar-item flex items-center px-4 py-3 rounded-xl text-purple-200 hover:text-white">
+                <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center mr-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                <span class="font-medium">My Profile</span>
             </a>
         </nav>
+
+        <!-- Logout - fixed at bottom -->
+        <div class="p-4 border-t border-purple-500/30">
+            <a href="/logout"
+                class="flex items-center px-4 py-3 rounded-xl text-rose-300 hover:bg-rose-500/20 transition-all">
+                <div class="w-10 h-10 rounded-lg bg-rose-500/20 flex items-center justify-center mr-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                        </path>
+                    </svg>
+                </div>
+                <span class="font-medium">Sign Out</span>
+            </a>
+        </div>
     </div>
 
+
     <!-- Main Content -->
-    <div class="ml-64 min-h-screen">
+    <div class="ml-72 min-h-screen">
         <!-- Header -->
-        <div class="gradient-bg text-white py-8 mb-8 shadow-xl" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
-            <div class="container mx-auto px-8">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-4xl font-extrabold mb-2 flex items-center">
-                            <svg class="w-10 h-10 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                            </svg>
-                            AI Health Assistant
-                        </h1>
-                        <p class="text-indigo-100 text-lg">Powered by Clinical BERT - Your Intelligent Health Companion | <span class="font-semibold">NeuraX</span></p>
+        <div class="hero-gradient text-white py-8 px-8">
+            <div class="flex items-center gap-4 mb-3">
+                <div class="relative">
+                    <div class="absolute inset-0 rounded-full bg-white/30 pulse-ring"></div>
+                    <div
+                        class="relative w-14 h-14 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                            </path>
+                        </svg>
                     </div>
                 </div>
+                <div>
+                    <span class="px-3 py-1 bg-white/20 backdrop-blur rounded-full text-sm font-medium">
+                        🤖 Powered by Clinical BERT
+                    </span>
+                </div>
             </div>
+            <h1 class="text-4xl font-black">AI Health Assistant</h1>
+            <p class="text-purple-100 text-lg">Your intelligent companion for health-related questions and report
+                analysis</p>
         </div>
 
-        <div class="container mx-auto px-8 max-w-6xl">
-            <!-- Info Card -->
-            <div class="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-6 mb-6 shadow-md">
-                <div class="flex items-start">
-                    <svg class="w-8 h-8 text-indigo-600 mr-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        <div class="p-8 max-w-6xl mx-auto">
+            <!-- Tab Navigation -->
+            <div class="flex gap-4 mb-6">
+                <button onclick="switchTab('chat')" id="tabChat"
+                    class="tab-btn active px-6 py-3 rounded-xl font-semibold flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                        </path>
                     </svg>
-                    <div>
-                        <h3 class="font-bold text-indigo-800 text-lg mb-2">About This Assistant</h3>
-                        <p class="text-indigo-700 text-sm leading-relaxed">
-                            This AI Health Assistant uses <strong>Clinical BERT</strong>, a specialized medical language model, to understand your health queries. 
-                            It engages in a <strong>continuous conversation</strong> with you, asking follow-up questions based on your responses to better understand your health concerns. 
-                            Each response is personalized using your medical history, current medications, and recent reports analyzed with Clinical BERT.
-                        </p>
-                        <p class="text-indigo-600 text-xs mt-2 italic">
-                            ⚠️ Please note: This assistant provides general health information and should not replace professional medical advice. 
-                            Always consult with your healthcare provider for serious concerns.
-                        </p>
-                    </div>
-                </div>
+                    AI Chat Assistant
+                </button>
+                <button onclick="switchTab('report')" id="tabReport"
+                    class="tab-btn px-6 py-3 rounded-xl font-semibold flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                        </path>
+                    </svg>
+                    Report Analysis
+                </button>
             </div>
 
-            <!-- Chat Container -->
-            <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border-t-4 border-indigo-500">
-                <div id="chatbotMessages" class="border-2 border-indigo-100 rounded-lg p-6 mb-6 min-h-96 max-h-[500px] overflow-y-auto bg-gradient-to-b from-gray-50 to-white space-y-4"></div>
-                
-            <!-- Chat Input Section -->
-            <div id="chatInputSection">
-                    <form id="chatbotForm" class="flex gap-3">
-                        <input type="text" id="chatbotInput" placeholder="Type your response here..." class="flex-1 px-5 py-3 border-2 border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg" required>
-                        <button type="submit" class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition shadow-md font-medium text-lg">
-                            <svg class="w-6 h-6 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+            <!-- Chat Tab Content -->
+            <div id="chatTabContent">
+                <!-- Info Card -->
+                <div
+                    class="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-2xl p-6 mb-6 shadow-lg border border-indigo-100">
+                    <div class="flex items-start gap-4">
+                        <div
+                            class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            Send
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-800 text-lg mb-2">About This Assistant</h3>
+                            <p class="text-gray-600 text-sm leading-relaxed">
+                                This AI Health Assistant uses <strong class="text-indigo-600">Clinical BERT</strong>, a
+                                specialized medical language model, to understand your health queries.
+                                It engages in a <strong class="text-purple-600">continuous conversation</strong>, asking
+                                follow-up questions to better understand your concerns.
+                            </p>
+                            <p class="text-amber-600 text-xs mt-3 flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                    </path>
+                                </svg>
+                                This is not a substitute for professional medical advice. Always consult your healthcare
+                                provider.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Container -->
+                <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                    <!-- Chat Header -->
+                    <div
+                        class="bg-gradient-to-r from-indigo-500 to-purple-500 px-6 py-4 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-white font-bold">NeuraX AI</p>
+                                <p class="text-purple-200 text-sm">Clinical BERT • Always Available</p>
+                            </div>
+                        </div>
+                        <button onclick="resetChatbot()"
+                            class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white text-sm font-medium transition flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                </path>
+                            </svg>
+                            New Chat
                         </button>
-                    </form>
+                    </div>
+
+                    <!-- Messages Area -->
+                    <div id="chatbotMessages"
+                        class="p-6 min-h-[400px] max-h-[500px] overflow-y-auto bg-gradient-to-b from-slate-50 to-white space-y-4">
+                        <!-- Messages will be dynamically added here -->
+                    </div>
+
+                    <!-- Chat Input -->
+                    <div class="p-4 border-t border-gray-100 bg-white">
+                        <form id="chatbotForm" class="flex gap-3">
+                            <input type="text" id="chatbotInput" placeholder="Type your health question..."
+                                class="flex-1 px-5 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg transition"
+                                required>
+                            <button type="submit"
+                                class="px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl hover:from-indigo-600 hover:to-purple-600 transition shadow-lg hover:shadow-xl font-semibold flex items-center gap-2">
+                                <span>Send</span>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
 
-            <!-- Features Card -->
-            <div class="bg-white rounded-xl shadow-lg p-6 border-t-4 border-purple-500">
-                <h3 class="text-xl font-bold text-gray-800 mb-4">How It Works</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-                        <div class="flex items-center mb-2">
-                            <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold mr-3">1</div>
-                            <h4 class="font-semibold text-indigo-800">Start Conversation</h4>
+            <!-- Report Analysis Tab Content -->
+            <div id="reportTabContent" class="hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Upload Section -->
+                    <div class="bg-white rounded-2xl shadow-xl p-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                            <div
+                                class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                    </path>
+                                </svg>
+                            </div>
+                            Upload Medical Report
+                        </h2>
+
+                        <div
+                            class="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-4 mb-6">
+                            <p class="text-sm text-purple-700 flex items-start">
+                                <svg class="w-5 h-5 mr-2 text-purple-600 flex-shrink-0 mt-0.5" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span><strong>AI-Powered Analysis:</strong> Upload your medical reports (lab results,
+                                    prescriptions, X-rays) and our AI will extract and analyze the information for
+                                    you.</span>
+                            </p>
                         </div>
-                        <p class="text-sm text-indigo-700">The chatbot greets you and asks about your health concern to begin the conversation.</p>
+
+                        <form id="uploadForm" enctype="multipart/form-data" class="space-y-5">
+                            <input type="hidden" name="specialist_type" value="general">
+                            <input type="hidden" name="patient_id" value="{{ user.user_db_id or 1 }}">
+
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Report Type</label>
+                                <select name="report_type"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all">
+                                    <option value="lab_report">Lab Report</option>
+                                    <option value="prescription">Prescription</option>
+                                    <option value="xray">X-Ray / Imaging</option>
+                                    <option value="medical_record">Medical Record</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Report File *</label>
+                                <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-500 transition-all cursor-pointer"
+                                    onclick="document.getElementById('fileInput').click()">
+                                    <input type="file" name="file" required accept=".png,.jpg,.jpeg,.pdf" id="fileInput"
+                                        class="hidden">
+                                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none"
+                                        viewBox="0 0 48 48">
+                                        <path
+                                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                    <p class="mt-3 text-sm text-gray-600 font-medium">Click to upload or drag and drop
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">PNG, JPG, JPEG, PDF (MAX. 16MB)</p>
+                                </div>
+                                <p id="fileName" class="mt-2 text-sm text-purple-600 font-medium hidden"></p>
+                            </div>
+
+                            <button type="submit" id="submitBtn"
+                                class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl">
+                                <span id="submitText">Analyze Report</span>
+                                <span id="submitLoading" class="hidden">Analyzing...</span>
+                            </button>
+                        </form>
+
+                        <!-- Loading Indicator -->
+                        <div id="loadingIndicator" class="hidden mt-6">
+                            <div class="bg-purple-50 border-2 border-purple-200 rounded-xl p-6 text-center">
+                                <div
+                                    class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-purple-200 border-t-purple-600 mb-3">
+                                </div>
+                                <p class="text-purple-700 font-semibold">Analyzing report with AI...</p>
+                                <p class="text-purple-500 text-sm mt-1">This may take a few moments</p>
+                            </div>
+                        </div>
+
+                        <!-- Error Display -->
+                        <div id="errorDisplay" class="hidden mt-6 bg-rose-50 border-2 border-rose-200 rounded-xl p-4">
+                            <p id="errorMessage" class="text-rose-700 font-medium"></p>
+                        </div>
                     </div>
-                    <div class="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                        <div class="flex items-center mb-2">
-                            <div class="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold mr-3">2</div>
-                            <h4 class="font-semibold text-purple-800">Continuous Q&A</h4>
+
+                    <!-- Results Section -->
+                    <div class="space-y-6">
+                        <div id="resultsSection" class="hidden space-y-6">
+                            <div class="bg-emerald-50 border-2 border-emerald-200 rounded-xl p-4">
+                                <p class="text-emerald-700 font-bold flex items-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Analysis Complete
+                                </p>
+                            </div>
+
+                            <div class="bg-white rounded-2xl shadow-xl p-6">
+                                <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                            </path>
+                                        </svg>
+                                    </div>
+                                    Extracted Text
+                                </h3>
+                                <div id="extractedText"
+                                    class="bg-slate-50 border-2 border-slate-200 rounded-xl p-4 max-h-48 overflow-y-auto text-sm font-mono">
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-2xl shadow-xl p-6">
+                                <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                                            </path>
+                                        </svg>
+                                    </div>
+                                    AI Medical Analysis
+                                </h3>
+                                <div id="llmAnalysis"
+                                    class="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-6 text-sm max-w-none">
+                                    <!-- Formatted content will be inserted here -->
+                                </div>
+                            </div>
+
+                            <div id="bertSection" class="hidden bg-white rounded-2xl shadow-xl p-6">
+                                <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                        </svg>
+                                    </div>
+                                    Clinical BERT Analysis
+                                </h3>
+                                <div id="clinicalBertAnalysis"
+                                    class="bg-emerald-50 border-2 border-emerald-200 rounded-xl p-4 text-sm"></div>
+                            </div>
                         </div>
-                        <p class="text-sm text-purple-700">Based on your responses, the chatbot asks follow-up questions using Clinical BERT analysis to better understand your situation.</p>
-                    </div>
-                    <div class="p-4 bg-pink-50 rounded-lg border border-pink-200">
-                        <div class="flex items-center mb-2">
-                            <div class="w-10 h-10 bg-pink-600 rounded-full flex items-center justify-center text-white font-bold mr-3">3</div>
-                            <h4 class="font-semibold text-pink-800">Personalized Guidance</h4>
+
+                        <!-- Empty State -->
+                        <div id="emptyResultsState" class="bg-white rounded-2xl shadow-xl p-12 text-center">
+                            <div
+                                class="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center mb-4">
+                                <svg class="w-10 h-10 text-purple-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">Upload a Report</h3>
+                            <p class="text-gray-500">Upload a medical report to see the AI analysis results here</p>
                         </div>
-                        <p class="text-sm text-pink-700">Receive context-aware responses and guidance based on your conversation history and medical records.</p>
                     </div>
                 </div>
             </div>
@@ -178,6 +575,28 @@
 
     <script>
         const patientId = {{ user.user_db_id or 1 }};
+        let conversationHistory = [];
+        let conversationStarted = false;
+
+        // Tab switching
+        function switchTab(tab) {
+            const chatTab = document.getElementById('tabChat');
+            const reportTab = document.getElementById('tabReport');
+            const chatContent = document.getElementById('chatTabContent');
+            const reportContent = document.getElementById('reportTabContent');
+
+            if (tab === 'chat') {
+                chatTab.classList.add('active');
+                reportTab.classList.remove('active');
+                chatContent.classList.remove('hidden');
+                reportContent.classList.add('hidden');
+            } else {
+                chatTab.classList.remove('active');
+                reportTab.classList.add('active');
+                chatContent.classList.add('hidden');
+                reportContent.classList.remove('hidden');
+            }
+        }
 
         // Load profile picture
         async function loadProfilePicture() {
@@ -197,118 +616,125 @@
             }
         }
 
-        // ==========================================
-        // AI CHATBOT WITH CLINICAL BERT - CONTINUOUS Q&A
-        // ==========================================
-        
-        let conversationHistory = [];  // Store conversation: [{role: 'user'|'assistant', content: '...'}]
-        let conversationStarted = false;
-        
         function resetChatbot() {
             conversationHistory = [];
             conversationStarted = false;
             document.getElementById('chatbotMessages').innerHTML = '';
             initializeChatbot();
         }
-        
+
         async function initializeChatbot() {
-            // Start with a greeting and first question
-            const greeting = 'Hello! I\'m your AI Health Assistant powered by Clinical BERT. I\'m here to help you understand your health concerns better. To get started, could you tell me what health question or concern you have today?';
+            const greeting = "Hello! I'm your AI Health Assistant powered by Clinical BERT. I'm here to help you understand your health concerns better. To get started, could you tell me what health question or concern you have today?";
             addChatbotMessage(greeting, false);
-            conversationHistory.push({role: 'assistant', content: greeting});
+            conversationHistory.push({ role: 'assistant', content: greeting });
             conversationStarted = true;
-            
-            // Ensure chat input is visible
-            document.getElementById('chatInputSection').classList.remove('hidden');
         }
-        
+
         function addChatbotMessage(message, isUser = true) {
             const messagesDiv = document.getElementById('chatbotMessages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
-            messageDiv.innerHTML = `
-                <div class="max-w-2xl px-5 py-4 rounded-xl shadow-md ${isUser ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white' : 'bg-gradient-to-r from-indigo-50 to-purple-50 text-gray-800 border-2 border-indigo-200'}">
-                    <div class="flex items-start">
-                        ${!isUser ? `
-                            <svg class="w-6 h-6 mr-3 text-indigo-600 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+
+            if (isUser) {
+                messageDiv.innerHTML = `
+                    <div class="user-bubble max-w-xl px-5 py-4 rounded-2xl rounded-br-md text-white shadow-lg">
+                        <p class="text-sm font-medium text-indigo-200 mb-1">You</p>
+                        <p class="leading-relaxed">${message.replace(/\n/g, '<br>')}</p>
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="flex items-start gap-3 max-w-xl">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0 shadow-lg">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                                </path>
                             </svg>
-                        ` : ''}
-                        <div class="flex-1">
-                            <p class="text-sm font-semibold mb-1 ${isUser ? 'text-indigo-100' : 'text-indigo-800'}">${isUser ? 'You' : 'AI Assistant'}</p>
-                            <p class="text-base leading-relaxed">${message.replace(/\n/g, '<br>')}</p>
+                        </div>
+                        <div class="ai-bubble px-5 py-4 rounded-2xl rounded-bl-md shadow-md">
+                            <p class="text-sm font-semibold text-indigo-600 mb-1">NeuraX AI</p>
+                            <p class="text-gray-700 leading-relaxed">${message.replace(/\n/g, '<br>')}</p>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
             messagesDiv.appendChild(messageDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
-        
-        document.getElementById('chatbotForm')?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (!conversationStarted) {
-                initializeChatbot();
-                return;
-            }
-            
-            const input = document.getElementById('chatbotInput');
-            const message = input.value.trim();
-            
-            if (!message) return;
-            
-            // Add user message to chat and history
-            addChatbotMessage(message, true);
-            conversationHistory.push({role: 'user', content: message});
-            input.value = '';
-            input.disabled = true;
-            
-            // Show typing indicator
+
+        function showTypingIndicator() {
+            const messagesDiv = document.getElementById('chatbotMessages');
             const typingDiv = document.createElement('div');
             typingDiv.className = 'flex justify-start';
             typingDiv.id = 'typingIndicator';
             typingDiv.innerHTML = `
-                <div class="bg-gray-200 rounded-xl px-5 py-4 shadow-md">
-                    <div class="flex items-center space-x-2">
-                        <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                        <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                        <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-                        <span class="text-sm text-gray-600 ml-2">AI is analyzing and thinking...</span>
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0 shadow-lg">
+                        <svg class="w-5 h-5 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                            </path>
+                        </svg>
+                    </div>
+                    <div class="ai-bubble px-5 py-4 rounded-2xl rounded-bl-md shadow-md flex items-center gap-2">
+                        <div class="flex gap-1">
+                            <div class="w-2 h-2 bg-indigo-400 rounded-full typing-dot"></div>
+                            <div class="w-2 h-2 bg-indigo-400 rounded-full typing-dot"></div>
+                            <div class="w-2 h-2 bg-indigo-400 rounded-full typing-dot"></div>
+                        </div>
+                        <span class="text-sm text-gray-500 ml-2">AI is analyzing...</span>
                     </div>
                 </div>
             `;
-            document.getElementById('chatbotMessages').appendChild(typingDiv);
-            document.getElementById('chatbotMessages').scrollTop = document.getElementById('chatbotMessages').scrollHeight;
-            
+            messagesDiv.appendChild(typingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        document.getElementById('chatbotForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!conversationStarted) {
+                initializeChatbot();
+                return;
+            }
+
+            const input = document.getElementById('chatbotInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            addChatbotMessage(message, true);
+            conversationHistory.push({ role: 'user', content: message });
+            input.value = '';
+            input.disabled = true;
+
+            showTypingIndicator();
+
             try {
                 const response = await fetch('/api/patient/chatbot', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         message: message,
                         patient_id: patientId,
-                        conversation_history: conversationHistory  // Send full conversation history
+                        conversation_history: conversationHistory
                     })
                 });
-                
+
                 const data = await response.json();
-                
-                // Remove typing indicator
+
                 document.getElementById('typingIndicator')?.remove();
                 input.disabled = false;
                 input.focus();
-                
+
                 if (data.success && data.response) {
-                    // Add assistant response to chat and history
                     addChatbotMessage(data.response, false);
-                    conversationHistory.push({role: 'assistant', content: data.response});
-                    
-                    // The response should contain a follow-up question, so the conversation continues
+                    conversationHistory.push({ role: 'assistant', content: data.response });
                 } else {
                     const errorMsg = 'I apologize, but I encountered an error. Please try again.';
                     addChatbotMessage(errorMsg, false);
-                    conversationHistory.push({role: 'assistant', content: errorMsg});
+                    conversationHistory.push({ role: 'assistant', content: errorMsg });
                 }
             } catch (error) {
                 document.getElementById('typingIndicator')?.remove();
@@ -317,27 +743,103 @@
                 console.error('Chatbot error:', error);
                 const errorMsg = 'Error: ' + error.message + '. Please try again.';
                 addChatbotMessage(errorMsg, false);
-                conversationHistory.push({role: 'assistant', content: errorMsg});
+                conversationHistory.push({ role: 'assistant', content: errorMsg });
             }
         });
 
-        function showProfileModal() {
-            window.location.href = '/patient/dashboard';
-        }
+        // Report Upload functionality
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        fileInput?.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                fileName.textContent = `Selected: ${e.target.files[0].name}`;
+                fileName.classList.remove('hidden');
+            }
+        });
+
+        const uploadForm = document.getElementById('uploadForm');
+        uploadForm?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const resultsSection = document.getElementById('resultsSection');
+            const emptyState = document.getElementById('emptyResultsState');
+            const errorDisplay = document.getElementById('errorDisplay');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = document.getElementById('submitText');
+            const submitLoading = document.getElementById('submitLoading');
+            const bertSection = document.getElementById('bertSection');
+
+            resultsSection.classList.add('hidden');
+            emptyState.classList.add('hidden');
+            errorDisplay.classList.add('hidden');
+            loadingIndicator.classList.remove('hidden');
+            submitBtn.disabled = true;
+            submitText.classList.add('hidden');
+            submitLoading.classList.remove('hidden');
+
+            const formData = new FormData(uploadForm);
+            formData.append('patient_name', '{{ user.full_name or "Patient" }}');
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('extractedText').textContent = data.extracted_text.substring(0, 500) + (data.extracted_text.length > 500 ? '...' : '');
+
+                    const analysisDiv = document.getElementById('llmAnalysis');
+                    analysisDiv.innerHTML = '';
+
+                    if (data.llm_analysis) {
+                        analysisDiv.innerHTML = data.llm_analysis;
+
+                        if (analysisDiv.textContent && analysisDiv.textContent.includes('<h3') && analysisDiv.children.length === 0) {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(data.llm_analysis, 'text/html');
+                            analysisDiv.innerHTML = doc.body.innerHTML;
+                        }
+                    } else {
+                        analysisDiv.innerHTML = '<p class="text-gray-500">No analysis available</p>';
+                    }
+
+                    if (data.clinical_bert_analysis) {
+                        document.getElementById('clinicalBertAnalysis').textContent = data.clinical_bert_analysis;
+                        bertSection.classList.remove('hidden');
+                    }
+
+                    resultsSection.classList.remove('hidden');
+                } else {
+                    document.getElementById('errorMessage').textContent = data.error || 'An error occurred';
+                    errorDisplay.classList.remove('hidden');
+                    emptyState.classList.remove('hidden');
+                }
+            } catch (error) {
+                document.getElementById('errorMessage').textContent = error.message;
+                errorDisplay.classList.remove('hidden');
+                emptyState.classList.remove('hidden');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                submitBtn.disabled = false;
+                submitText.classList.remove('hidden');
+                submitLoading.classList.add('hidden');
+            }
+        });
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadProfilePicture();
             initializeChatbot();
-            // Focus on input after initialization
             setTimeout(() => {
                 const input = document.getElementById('chatbotInput');
-                if (input) {
-                    input.focus();
-                }
+                if (input) input.focus();
             }, 500);
         });
     </script>
 </body>
-</html>
 
+</html>

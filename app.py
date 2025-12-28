@@ -1565,14 +1565,14 @@ def doctor_appointments_page():
     """Doctor appointments page"""
     if 'user_role' not in session or session['user_role'] != 'doctor':
         return redirect(url_for('login'))
-    return render_template('doctor_appointments.html')
+    return render_template('doctor_appointments.html', user=session)
 
 @app.route('/patient/appointments')
 def patient_appointments_page():
     """Patient appointments page"""
     if 'user_role' not in session or session['user_role'] != 'patient':
         return redirect(url_for('login'))
-    return render_template('patient_appointments.html')
+    return render_template('patient_appointments.html', user=session)
 
 @app.route('/patient/chat')
 def patient_chat_page():
@@ -1767,7 +1767,8 @@ def specialist_page(specialist_type):
 @app.route('/upload', methods=['POST'])
 def upload_file():
     """Handle file upload, OCR, and AI analysis"""
-    if 'user_role' not in session or session['user_role'] != 'doctor':
+    # Allow both doctors and patients to upload reports
+    if 'user_role' not in session or session['user_role'] not in ['doctor', 'patient']:
         return jsonify({'error': 'Unauthorized'}), 401
     try:
         # Validate file and patient name
