@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ specialist_name }} - Doctor Portal | NeuraX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .gradient-specialist {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .chat-message {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Sidebar -->
+    <div class="fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-indigo-700 to-purple-800 text-white shadow-xl z-50 overflow-y-auto">
+        <!-- Doctor Profile Section -->
+        <div class="p-6 border-b border-indigo-600">
+            {% if doctor and doctor.profile_picture %}
+            <div class="flex flex-col items-center mb-4">
+                <img src="{{ url_for('static', filename=doctor.profile_picture if doctor.profile_picture.startswith('profiles/') else 'profiles/' + doctor.profile_picture) }}" 
+                     alt="{{ doctor.name }}" 
+                     class="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover mb-3">
+                <h3 class="font-bold text-lg">{{ doctor.name }}</h3>
+                <p class="text-indigo-200 text-sm">{{ specialists.get(doctor.specialist_type, 'Doctor') if doctor.specialist_type else 'Doctor' }}</p>
+            </div>
+            {% else %}
+            <div class="flex flex-col items-center mb-4">
+                <div class="w-20 h-20 rounded-full bg-white bg-opacity-20 flex items-center justify-center mb-3">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                <p class="text-indigo-200 text-sm">No Profile Set</p>
+                <a href="/profile" class="mt-2 text-xs text-indigo-300 hover:text-white underline">Set Profile</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="mt-4">
+            <a href="/" class="flex items-center px-6 py-3 text-white hover:bg-indigo-600 transition">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                Dashboard
+            </a>
+            <a href="/profile" class="flex items-center px-6 py-3 text-white hover:bg-indigo-600 transition">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                My Profile
+            </a>
+            <div class="px-6 py-2 text-indigo-300 text-xs font-semibold uppercase mt-4 mb-2">Specialists</div>
+            {% for key, name in specialists.items() %}
+            <a href="/specialist/{{ key }}" class="flex items-center px-6 py-3 {% if key == specialist_type %}bg-indigo-600{% else %}text-white hover:bg-indigo-600{% endif %} transition">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                {{ name }}
+            </a>
+            {% endfor %}
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="ml-64 min-h-screen">
+        <!-- Header -->
+        <div class="gradient-specialist text-white py-6 mb-8">
+            <div class="container mx-auto px-8">
+                <h1 class="text-4xl font-bold mb-2">{{ specialist_name }}</h1>
+                <p class="text-blue-100">Upload test reports and get AI-powered insights</p>
+            </div>
+        </div>
+
+    <div class="container mx-auto px-8 max-w-7xl">
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-100 rounded-lg">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-600 text-sm">Total Reports</p>
+                        <p class="text-2xl font-bold text-gray-800" id="totalReports">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-green-100 rounded-lg">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-600 text-sm">Analysis Accuracy</p>
+                        <p class="text-2xl font-bold text-gray-800">98.5%</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-purple-100 rounded-lg">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-gray-600 text-sm">Avg. Processing</p>
+                        <p class="text-2xl font-bold text-gray-800">12s</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Upload Section -->
+            <div class="space-y-6">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        Upload Report
+                    </h2>
+                    <form id="uploadForm" enctype="multipart/form-data" class="space-y-4">
+                        <input type="hidden" name="specialist_type" value="{{ specialist_type }}">
+                        <input type="hidden" id="doctorIdInput" name="doctor_id" value="">
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Patient Name *</label>
+                            <input type="text" name="patient_name" required
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Report File *</label>
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition">
+                                <input type="file" name="file" required accept=".png,.jpg,.jpeg,.pdf" id="fileInput"
+                                       class="hidden">
+                                <label for="fileInput" class="cursor-pointer">
+                                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                    <p class="mt-2 text-sm text-gray-600">Click to upload or drag and drop</p>
+                                    <p class="text-xs text-gray-500">PNG, JPG, JPEG, PDF (MAX. 16MB)</p>
+                                </label>
+                            </div>
+                            <p id="fileName" class="mt-2 text-sm text-blue-600 hidden"></p>
+                        </div>
+                        
+                        <button type="submit" id="submitBtn"
+                                class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-md transition shadow-md">
+                            <span id="submitText">Analyze Report</span>
+                            <span id="submitLoading" class="hidden">Analyzing...</span>
+                        </button>
+                    </form>
+
+                    <!-- Loading Indicator -->
+                    <div id="loadingIndicator" class="hidden mt-6">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
+                            <p class="text-blue-700 font-medium">Analyzing report with AI...</p>
+                        </div>
+                    </div>
+
+                    <!-- Error Display -->
+                    <div id="errorDisplay" class="hidden mt-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p id="errorMessage" class="text-red-700"></p>
+                    </div>
+
+                    <!-- Results Section -->
+                    <div id="resultsSection" class="hidden mt-6 space-y-4">
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <p class="text-green-700 font-semibold">✓ Analysis Complete</p>
+                        </div>
+                        
+                        <div>
+                            <h3 class="font-semibold text-gray-800 mb-2 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Extracted Text
+                            </h3>
+                            <div id="extractedText" class="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-48 overflow-y-auto text-sm font-mono"></div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="font-semibold text-gray-800 mb-2 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                </svg>
+                                AI Medical Analysis
+                            </h3>
+                            <div id="llmAnalysis" class="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6 text-sm max-w-none">
+                                <!-- Formatted content will be inserted here -->
+                            </div>
+                        </div>
+
+                        <div id="bertSection" class="hidden">
+                            <h3 class="font-semibold text-gray-800 mb-2 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                Clinical BERT Analysis
+                            </h3>
+                            <div id="clinicalBertAnalysis" class="bg-green-50 border border-green-200 rounded-lg p-4 text-sm"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Chart -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Report Activity</h3>
+                    <div class="chart-container" style="position: relative; height: 250px;">
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chatbot Section -->
+            <div class="space-y-6">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                        AI Assistant Chat (Clinical BERT)
+                    </h2>
+                    <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-lg p-3 mb-4">
+                        <p class="text-sm text-purple-700 flex items-start">
+                            <svg class="w-5 h-5 mr-2 text-purple-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span><strong>Powered by Clinical BERT:</strong> This AI assistant uses Clinical BERT to understand medical terminology and provide context-aware responses for {{ specialist_name }} professionals.</span>
+                        </p>
+                    </div>
+                    <div id="chatContainer" class="flex flex-col h-[500px] border border-gray-200 rounded-lg overflow-hidden">
+                        <div id="chatMessages" class="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
+                            <div class="chat-message bg-gradient-to-r from-purple-100 to-indigo-100 rounded-lg p-3 max-w-xs border border-purple-200">
+                                <p class="text-sm text-gray-700"><strong>Clinical BERT AI Assistant:</strong> Hello! I'm your {{ specialist_name }} AI assistant powered by Clinical BERT. I can help you with medical terminology, analysis, and professional guidance. How can I assist you today?</p>
+                            </div>
+                        </div>
+                        <div class="border-t border-gray-200 p-4 bg-white">
+                            <div class="flex space-x-2">
+                                <input type="text" id="chatInput" placeholder="Type your message..."
+                                       class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                       onkeypress="if(event.key==='Enter') document.getElementById('sendChatBtn').click()">
+                                <button id="sendChatBtn" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-lg transition shadow-md">
+                                    Send
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Statistics -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Chat Statistics</h3>
+                    <div class="chart-container" style="position: relative; height: 250px;">
+                        <canvas id="chatChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load doctor ID from localStorage
+        const doctorId = localStorage.getItem('doctor_id') || '';
+        document.getElementById('doctorIdInput').value = doctorId;
+
+        let activityChart, chatChart;
+
+        // File input display
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                fileName.textContent = `Selected: ${e.target.files[0].name}`;
+                fileName.classList.remove('hidden');
+            }
+        });
+
+        // Upload form
+        const uploadForm = document.getElementById('uploadForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const submitText = document.getElementById('submitText');
+        const submitLoading = document.getElementById('submitLoading');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const errorDisplay = document.getElementById('errorDisplay');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultsSection = document.getElementById('resultsSection');
+        const bertSection = document.getElementById('bertSection');
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            resultsSection.classList.add('hidden');
+            errorDisplay.classList.add('hidden');
+            loadingIndicator.classList.remove('hidden');
+            submitBtn.disabled = true;
+            submitText.classList.add('hidden');
+            submitLoading.classList.remove('hidden');
+
+            const formData = new FormData(uploadForm);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('extractedText').textContent = data.extracted_text.substring(0, 500) + (data.extracted_text.length > 500 ? '...' : '');
+                    
+                    // Display formatted HTML analysis
+                    const analysisDiv = document.getElementById('llmAnalysis');
+                    
+                    // Clear previous content
+                    analysisDiv.innerHTML = '';
+                    
+                    // Render HTML analysis - always use innerHTML since it's formatted HTML from server
+                    if (data.llm_analysis) {
+                        // Debug: Check what we received
+                        console.log('Received llm_analysis, length:', data.llm_analysis.length);
+                        console.log('First 200 chars:', data.llm_analysis.substring(0, 200));
+                        
+                        // Server returns formatted HTML - render it directly using innerHTML
+                        // This will parse and render the HTML tags
+                        analysisDiv.innerHTML = data.llm_analysis;
+                        
+                        // Verify it was rendered
+                        console.log('After innerHTML, element has', analysisDiv.children.length, 'child elements');
+                        
+                        // If it's still showing as text, try creating a temporary element
+                        if (analysisDiv.textContent && analysisDiv.textContent.includes('<h3') && analysisDiv.children.length === 0) {
+                            // HTML was escaped - try unescaping
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(data.llm_analysis, 'text/html');
+                            analysisDiv.innerHTML = doc.body.innerHTML;
+                        }
+                    } else if (data.llm_analysis_raw) {
+                        // Fallback - format raw text on client side
+                        const formatted = formatAnalysisText(data.llm_analysis_raw);
+                        analysisDiv.innerHTML = formatted;
+                    } else {
+                        analysisDiv.innerHTML = '<p class="text-gray-500">No analysis available</p>';
+                    }
+                    
+                    if (data.clinical_bert_analysis) {
+                        document.getElementById('clinicalBertAnalysis').textContent = data.clinical_bert_analysis;
+                        bertSection.classList.remove('hidden');
+                    }
+                    
+                    resultsSection.classList.remove('hidden');
+                    loadActivityChart();
+                    updateReportCount();
+                } else {
+                    errorMessage.textContent = data.error || 'An error occurred';
+                    errorDisplay.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorMessage.textContent = error.message;
+                errorDisplay.classList.remove('hidden');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                submitBtn.disabled = false;
+                submitText.classList.remove('hidden');
+                submitLoading.classList.add('hidden');
+            }
+        });
+
+        // Chat functionality
+        const chatInput = document.getElementById('chatInput');
+        const sendChatBtn = document.getElementById('sendChatBtn');
+        const chatMessages = document.getElementById('chatMessages');
+        let chatCount = 0;
+
+        function addChatMessage(message, isUser = true) {
+            chatCount++;
+            const div = document.createElement('div');
+            div.className = `chat-message ${isUser ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-3 ml-auto max-w-xs' : 'bg-gray-200 rounded-lg p-3 max-w-xs'}`;
+            div.innerHTML = `<p class="text-sm">${message.replace(/\n/g, '<br>')}</p>`;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            updateChatChart();
+        }
+
+        sendChatBtn.addEventListener('click', async () => {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            addChatMessage(message, true);
+            chatInput.value = '';
+            sendChatBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        specialist_type: '{{ specialist_type }}',
+                        doctor_id: doctorId || null
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    setTimeout(() => {
+                        addChatMessage(data.response, false);
+                    }, 500);
+                } else {
+                    addChatMessage('Error: ' + (data.error || 'Failed to get response'), false);
+                }
+            } catch (error) {
+                addChatMessage('Error: ' + error.message, false);
+            } finally {
+                sendChatBtn.disabled = false;
+            }
+        });
+
+        // Load specialist reports
+        async function updateReportCount() {
+            try {
+                const response = await fetch('/api/reports/{{ specialist_type }}');
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('specialistReportCount').textContent = data.reports.length;
+                    document.getElementById('totalReports').textContent = data.reports.length;
+                }
+            } catch (error) {
+                console.error('Error loading reports:', error);
+            }
+        }
+
+        function loadActivityChart() {
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            if (activityChart) activityChart.destroy();
+            
+            // Sample data - in production, fetch from API
+            activityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Reports',
+                        data: [2, 5, 3, 7, 4, 6, 3],
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1.8,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChatChart() {
+            const ctx = document.getElementById('chatChart').getContext('2d');
+            if (chatChart) chatChart.destroy();
+            
+            chatChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['User Messages', 'AI Responses'],
+                    datasets: [{
+                        data: [chatCount, chatCount],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(139, 92, 246, 0.8)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1.5,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Format analysis text function
+        function formatAnalysisText(text) {
+            if (!text) return '';
+            
+            // Escape HTML first, then process markdown
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            function processBold(text) {
+                return text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-gray-900">$1</strong>');
+            }
+            
+            let html = '';
+            const lines = text.split('\n');
+            let inList = false;
+            let inTable = false;
+            let tableRows = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                if (!line) {
+                    if (inList) {
+                        html += '</ul>';
+                        inList = false;
+                    }
+                    if (inTable && tableRows.length > 0) {
+                        html += formatTable(tableRows);
+                        tableRows = [];
+                        inTable = false;
+                    }
+                    html += '<br>';
+                    continue;
+                }
+                
+                // Check for table rows
+                if (line.includes('|') && (line.match(/\|/g) || []).length >= 2) {
+                    const cells = line.split('|').map(c => c.trim()).filter(c => c);
+                    const isSeparator = cells.every(c => c.replace(/-/g, '').trim() === '');
+                    if (!isSeparator && cells.length > 0) {
+                        tableRows.push(cells);
+                        inTable = true;
+                        if (inList) {
+                            html += '</ul>';
+                            inList = false;
+                        }
+                    }
+                    continue;
+                }
+                
+                if (inTable && tableRows.length > 0) {
+                    html += formatTable(tableRows);
+                    tableRows = [];
+                    inTable = false;
+                }
+                
+                // Main headings with ##
+                if (line.startsWith('##')) {
+                    if (inList) {
+                        html += '</ul>';
+                        inList = false;
+                    }
+                    const headingText = processBold(escapeHtml(line.replace(/^##\s*/, '')));
+                    html += `<h3 class="text-xl font-bold text-gray-800 mt-4 mb-2 pb-2 border-b-2 border-blue-300">${headingText}</h3>`;
+                }
+                // Numbered headings
+                else if (/^\d+\.\s+[A-Z]/.test(line)) {
+                    if (inList) {
+                        html += '</ul>';
+                        inList = false;
+                    }
+                    const headingText = processBold(escapeHtml(line.replace(/^\d+\.\s+/, '')));
+                    html += `<h3 class="text-lg font-bold text-gray-800 mt-4 mb-2 pb-2 border-b border-blue-200">${headingText}</h3>`;
+                }
+                // Subheadings
+                else if ((line.endsWith(':') && line.length < 60) || (line === line.toUpperCase() && line.length > 5 && line.length < 50)) {
+                    if (inList) {
+                        html += '</ul>';
+                        inList = false;
+                    }
+                    const headingText = processBold(escapeHtml(line));
+                    html += `<h4 class="text-lg font-semibold text-gray-700 mt-3 mb-2">${headingText}</h4>`;
+                }
+                // Bullet points
+                else if (/^[-*•]\s/.test(line) || /^\d+[.)]\s/.test(line)) {
+                    if (!inList) {
+                        html += '<ul class="list-disc list-inside space-y-1 ml-4 mb-3">';
+                        inList = true;
+                    }
+                    const bulletText = processBold(escapeHtml(line.replace(/^[-*•\d.)\s]+/, '')));
+                    html += `<li class="text-gray-700 mb-1">${bulletText}</li>`;
+                }
+                // Regular paragraph
+                else {
+                    if (inList) {
+                        html += '</ul>';
+                        inList = false;
+                    }
+                    const processedLine = processBold(escapeHtml(line));
+                    html += `<p class="text-gray-700 mb-2 leading-relaxed">${processedLine}</p>`;
+                }
+            }
+            
+            if (inList) html += '</ul>';
+            if (inTable && tableRows.length > 0) html += formatTable(tableRows);
+            return html;
+        }
+        
+        function formatTable(rows) {
+            if (!rows || rows.length === 0) return '';
+            
+            let html = '<div class="overflow-x-auto my-4"><table class="min-w-full border-collapse border border-gray-300">';
+            
+            if (rows.length > 0) {
+                html += '<thead class="bg-blue-100"><tr>';
+                rows[0].forEach(cell => {
+                    html += `<th class="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">${cell}</th>`;
+                });
+                html += '</tr></thead><tbody>';
+                
+                for (let i = 1; i < rows.length; i++) {
+                    html += '<tr class="hover:bg-gray-50">';
+                    rows[i].forEach(cell => {
+                        html += `<td class="border border-gray-300 px-4 py-2 text-gray-700">${cell}</td>`;
+                    });
+                    html += '</tr>';
+                }
+                html += '</tbody>';
+            }
+            
+            html += '</table></div>';
+            return html;
+        }
+
+        // Initialize
+        updateReportCount();
+        loadActivityChart();
+        updateChatChart();
+    </script>
+</body>
+</html>

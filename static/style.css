@@ -1,0 +1,150 @@
+/* Additional custom styles if needed */
+/* Since we're using Tailwind CSS, this file is minimal */
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Custom scrollbar for extracted text area */
+#extractedText::-webkit-scrollbar,
+#llmAnalysis::-webkit-scrollbar {
+    width: 8px;
+}
+
+#extractedText::-webkit-scrollbar-track,
+#llmAnalysis::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#extractedText::-webkit-scrollbar-thumb,
+#llmAnalysis::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+#extractedText::-webkit-scrollbar-thumb:hover,
+#llmAnalysis::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Smooth animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#resultsSection {
+    animation: fadeIn 0.3s ease-in;
+}
+
+/* Enhanced formatting for analysis results */
+#llmAnalysis h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #93c5fd;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+#llmAnalysis h4 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+#llmAnalysis ul {
+    margin-left: 1rem;
+    margin-bottom: 0.75rem;
+    list-style-type: disc;
+}
+
+#llmAnalysis ul li {
+    margin-bottom: 0.25rem;
+    line-height: 1.6;
+}
+
+#llmAnalysis p {
+    margin-bottom: 0.75rem;
+    line-height: 1.7;
+    color: #374151;
+}
+
+#llmAnalysis strong {
+    font-weight: 700;
+    color: #111827;
+}
+
+#llmAnalysis table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+}
+
+#llmAnalysis table th {
+    background-color: #dbeafe;
+    font-weight: 600;
+    text-align: left;
+    padding: 0.75rem;
+    border: 1px solid #cbd5e1;
+}
+
+#llmAnalysis table td {
+    padding: 0.75rem;
+    border: 1px solid #cbd5e1;
+    background-color: #ffffff;
+}
+
+#llmAnalysis table tr:hover {
+    background-color: #f9fafb;
+}
+
+/* Ensure HTML content renders properly */
+#llmAnalysis {
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Make sure HTML elements render, not display as text */
+#llmAnalysis h1, #llmAnalysis h2, #llmAnalysis h3, #llmAnalysis h4, #llmAnalysis h5, #llmAnalysis h6 {
+    display: block;
+}
+
+#llmAnalysis p {
+    display: block;
+}
+
+#llmAnalysis ul, #llmAnalysis ol {
+    display: block;
+}
+
+#llmAnalysis li {
+    display: list-item;
+}
+
+#llmAnalysis table {
+    display: table;
+}
+
+#llmAnalysis tr {
+    display: table-row;
+}
+
+#llmAnalysis td, #llmAnalysis th {
+    display: table-cell;
+}
+
+/* Inline elements should remain inline */
+#llmAnalysis strong, #llmAnalysis em, #llmAnalysis span {
+    display: inline;
+}
+

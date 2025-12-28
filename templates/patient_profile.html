@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ patient.name }} - Patient Profile | NeuraX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Sidebar -->
+    <div class="fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-indigo-700 to-purple-800 text-white shadow-xl z-50 overflow-y-auto">
+        <div class="p-6 border-b border-indigo-600">
+            <div class="mb-4">
+                <h2 class="text-2xl font-extrabold text-white mb-2">Neura<span class="text-purple-300">X</span></h2>
+                <p class="text-xs text-indigo-200 text-center">Healthcare Intelligence</p>
+            </div>
+            <div class="flex flex-col items-center mb-4 mt-4">
+                {% if patient.profile_picture %}
+                <img src="{{ url_for('static', filename=patient.profile_picture if patient.profile_picture.startswith('profiles/') else 'profiles/' + patient.profile_picture) }}" 
+                     alt="{{ patient.name }}" 
+                     class="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover mb-3">
+                {% else %}
+                <div class="w-20 h-20 rounded-full bg-white bg-opacity-20 flex items-center justify-center mb-3 overflow-hidden shadow-lg border-2 border-white border-opacity-30">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                {% endif %}
+                <h3 class="font-bold text-lg">{{ patient.name }}</h3>
+                <p class="text-indigo-200 text-sm">Patient</p>
+            </div>
+        </div>
+        <nav class="mt-4">
+            {% if session.user_role == 'doctor' %}
+            <a href="/doctor/dashboard" class="flex items-center px-6 py-3 text-white hover:bg-indigo-600 hover:bg-opacity-30 transition">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                Doctor Dashboard
+            </a>
+            {% elif session.user_role == 'patient' %}
+            <a href="/patient/dashboard" class="flex items-center px-6 py-3 text-white hover:bg-indigo-600 hover:bg-opacity-30 transition">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                Patient Dashboard
+            </a>
+            {% else %}
+            <a href="/" class="flex items-center px-6 py-3 text-white hover:bg-indigo-600 hover:bg-opacity-30 transition">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                Dashboard
+            </a>
+            {% endif %}
+            <a href="/logout" class="flex items-center px-6 py-3 text-white hover:bg-red-600 hover:bg-opacity-30 transition absolute bottom-0 w-full border-t border-indigo-400 border-opacity-30">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                </svg>
+                Logout
+            </a>
+        </nav>
+    </div>
+
+    <div class="ml-64 min-h-screen">
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-6 mb-8 shadow-xl">
+            <div class="container mx-auto px-8">
+                <h1 class="text-3xl font-extrabold flex items-center">
+                    <span class="mr-3">{{ patient.name }}</span>
+                    <span class="text-purple-200 text-xl">NeuraX</span>
+                </h1>
+                <p class="text-indigo-100 mt-2">Patient Profile & Medical History</p>
+            </div>
+        </div>
+
+        <div class="container mx-auto px-8 max-w-6xl">
+            <!-- Patient Info -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold text-gray-800">Patient Information</h2>
+                    <button onclick="editPatientProfile()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Edit Profile</button>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+                    <div>
+                        <p class="text-sm text-gray-600">Patient Name</p>
+                        <p class="font-semibold text-lg">{{ patient.name }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Date of Birth</p>
+                        <p class="font-semibold">{{ patient.date_of_birth or 'Not provided' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Phone</p>
+                        <p class="font-semibold">{{ patient.phone or patient.contact_info or 'Not provided' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Gender</p>
+                        <p class="font-semibold">{{ patient.gender or 'Not provided' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Address</p>
+                        <p class="font-semibold">{{ patient.address or 'Not provided' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Total Reports</p>
+                        <p class="font-semibold text-2xl text-blue-600">{{ reports|length }}</p>
+                    </div>
+                    {% if patient.patient_tags %}
+                    <div class="col-span-2 md:col-span-4">
+                        <p class="text-sm text-gray-600 mb-2">Tags</p>
+                        <div class="flex flex-wrap gap-2">
+                            {% for tag in patient.patient_tags.split(',') %}
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">{{ tag.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Medical History -->
+                {% if patient.medical_history %}
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Medical History</h3>
+                    <p class="text-gray-700 whitespace-pre-wrap">{{ patient.medical_history }}</p>
+                </div>
+                {% endif %}
+                
+                <!-- Allergies -->
+                {% if patient.allergies %}
+                <div class="mt-4">
+                    <h3 class="text-lg font-semibold text-red-800 mb-2">Allergies</h3>
+                    <p class="text-red-700 whitespace-pre-wrap">{{ patient.allergies }}</p>
+                </div>
+                {% endif %}
+                
+                <!-- Medications -->
+                {% if patient.medications %}
+                <div class="mt-4">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Current Medications</h3>
+                    <p class="text-gray-700 whitespace-pre-wrap">{{ patient.medications }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Statistics -->
+            {% if reports %}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <p class="text-sm text-gray-600">Last Report</p>
+                    <p class="font-semibold text-lg">{{ reports[0].created_at[:10] }}</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <p class="text-sm text-gray-600">Most Common Specialist</p>
+                    {% set type_counts = {} %}
+                    {% for r in reports %}
+                        {% if r.specialist_type %}
+                            {% set key = r.specialist_type %}
+                            {% if key not in type_counts %}
+                                {% set _ = type_counts.update({key: 1}) %}
+                            {% else %}
+                                {% set _ = type_counts.update({key: type_counts[key] + 1}) %}
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    {% set max_val = 0 %}
+                    {% set most_type = '' %}
+                    {% for type, count in type_counts.items() %}
+                        {% if count > max_val %}
+                            {% set max_val = count %}
+                            {% set most_type = type %}
+                        {% endif %}
+                    {% endfor %}
+                    <p class="font-semibold text-lg">{{ specialists.get(most_type, most_type) if most_type else 'N/A' }}</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <p class="text-sm text-gray-600">Reports This Month</p>
+                    {% set current_month = reports[0].created_at[:7] %}
+                    {% set count_this_month = 0 %}
+                    {% for r in reports %}
+                        {% if r.created_at and r.created_at[:7] == current_month %}
+                            {% set count_this_month = count_this_month + 1 %}
+                        {% endif %}
+                    {% endfor %}
+                    <p class="font-semibold text-lg">{{ count_this_month }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Report Timeline -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Report History Timeline</h2>
+                {% if reports %}
+                <div class="space-y-4">
+                    {% for report in reports %}
+                    <div class="border-l-4 border-blue-500 pl-4 pb-4 {% if not loop.last %}border-gray-300{% endif %}">
+                        <div class="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="font-semibold text-lg">
+                                        <a href="/report/{{ report.id }}" class="text-blue-600 hover:underline">
+                                            {{ report.original_filename }}
+                                        </a>
+                                    </h3>
+                                    <p class="text-sm text-gray-600">{{ report.created_at[:19] }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                        {{ specialists.get(report.specialist_type, report.specialist_type) }}
+                                    </span>
+                                    {% if report.status %}
+                                    <span class="px-3 py-1 ml-2 {% if report.status == 'critical' %}bg-red-100 text-red-800{% elif report.status == 'reviewed' %}bg-green-100 text-green-800{% elif report.status == 'follow-up' %}bg-yellow-100 text-yellow-800{% else %}bg-blue-100 text-blue-800{% endif %} text-xs rounded-full">
+                                        {{ report.status }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if report.doctor_name %}
+                            <p class="text-sm text-gray-500">Doctor: {{ report.doctor_name }}</p>
+                            {% endif %}
+                            {% if report.doctor_notes %}
+                            <div class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                                <p class="text-sm"><strong>Notes:</strong> {{ report.doctor_notes }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-500 text-center py-8">No reports yet for this patient.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function editPatientProfile() {
+            const patient = {{ patient|tojson }};
+            const form = document.createElement('div');
+            form.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            form.innerHTML = `
+                <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <h2 class="text-2xl font-bold mb-6">Edit Patient Profile</h2>
+                    <form id="patientForm">
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Name</label>
+                                <input type="text" name="name" value="${patient.name || ''}" class="w-full px-3 py-2 border rounded">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Date of Birth</label>
+                                <input type="date" name="date_of_birth" value="${patient.date_of_birth || ''}" class="w-full px-3 py-2 border rounded">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Phone</label>
+                                <input type="tel" name="phone" value="${patient.phone || ''}" class="w-full px-3 py-2 border rounded">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Gender</label>
+                                <select name="gender" class="w-full px-3 py-2 border rounded">
+                                    <option value="">Select</option>
+                                    <option value="Male" ${patient.gender === 'Male' ? 'selected' : ''}>Male</option>
+                                    <option value="Female" ${patient.gender === 'Female' ? 'selected' : ''}>Female</option>
+                                    <option value="Other" ${patient.gender === 'Other' ? 'selected' : ''}>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-1">Address</label>
+                            <textarea name="address" rows="2" class="w-full px-3 py-2 border rounded">${patient.address || ''}</textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-1">Medical History</label>
+                            <textarea name="medical_history" rows="4" class="w-full px-3 py-2 border rounded">${patient.medical_history || ''}</textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-1 text-red-700">Allergies</label>
+                            <textarea name="allergies" rows="3" class="w-full px-3 py-2 border rounded">${patient.allergies || ''}</textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-1">Current Medications</label>
+                            <textarea name="medications" rows="3" class="w-full px-3 py-2 border rounded">${patient.medications || ''}</textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-1">Tags (comma-separated)</label>
+                            <input type="text" name="patient_tags" value="${patient.patient_tags || ''}" placeholder="High Priority, Follow-up Needed" class="w-full px-3 py-2 border rounded">
+                        </div>
+                        <div class="flex justify-end gap-4">
+                            <button type="button" onclick="this.closest('.fixed').remove()" class="px-6 py-2 border rounded hover:bg-gray-100">Cancel</button>
+                            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(form);
+            
+            form.querySelector('#patientForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+                
+                try {
+                    const response = await fetch(`/api/patient/${patient.id}`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(data)
+                    });
+                    
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Failed to update patient profile');
+                    }
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+

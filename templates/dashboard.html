@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Report Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Sidebar -->
+    <div class="fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-indigo-700 to-purple-800 text-white shadow-xl z-50 overflow-y-auto">
+        <!-- Doctor Profile Section -->
+        <div class="p-6 border-b border-indigo-600">
+            {% if doctor and doctor.profile_picture %}
+            <div class="flex flex-col items-center mb-4">
+                <img src="{{ url_for('static', filename=doctor.profile_picture if doctor.profile_picture.startswith('profiles/') else 'profiles/' + doctor.profile_picture) }}" 
+                     alt="{{ doctor.name }}" 
+                     class="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover mb-3">
+                <h3 class="font-bold text-lg">{{ doctor.name }}</h3>
+                <p class="text-indigo-200 text-sm">{{ specialists.get(doctor.specialist_type, 'Doctor') if doctor.specialist_type else 'Doctor' }}</p>
+            </div>
+            {% else %}
+            <div class="flex flex-col items-center mb-4">
+                <div class="w-20 h-20 rounded-full bg-white bg-opacity-20 flex items-center justify-center mb-3">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                <p class="text-indigo-200 text-sm">No Profile Set</p>
+                <a href="/profile" class="mt-2 text-xs text-indigo-300 hover:text-white underline">Set Profile</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="mt-4">
+            <a href="/" class="flex items-center px-6 py-3 bg-indigo-600 text-white">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                Dashboard
+            </a>
+            <a href="/profile" class="flex items-center px-6 py-3 text-white hover:bg-indigo-600 transition">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                My Profile
+            </a>
+            <div class="px-6 py-2 text-indigo-300 text-xs font-semibold uppercase mt-4 mb-2">Specialists</div>
+            {% for key, name in specialists.items() %}
+            <a href="/specialist/{{ key }}" class="flex items-center px-6 py-3 text-white hover:bg-indigo-600 transition">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                {{ name }}
+            </a>
+            {% endfor %}
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="ml-64 min-h-screen">
+        <!-- Header -->
+        <div class="gradient-bg text-white py-6 mb-8">
+            <div class="container mx-auto px-8">
+                <h1 class="text-4xl font-bold mb-2">Medical Report Management System</h1>
+                <p class="text-blue-100">Comprehensive medical analysis platform for specialists</p>
+            </div>
+        </div>
+
+        <div class="container mx-auto px-8 max-w-7xl">
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" id="statsCards">
+                <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-600 text-sm">Total Reports</p>
+                            <p class="text-2xl font-bold text-gray-800" id="totalReports">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg">
+                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-600 text-sm">Total Patients</p>
+                            <p class="text-2xl font-bold text-gray-800" id="totalPatients">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-purple-100 rounded-lg">
+                            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-600 text-sm">Total Doctors</p>
+                            <p class="text-2xl font-bold text-gray-800" id="totalDoctors">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-red-100 rounded-lg">
+                            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-gray-600 text-sm">Active Specialists</p>
+                            <p class="text-2xl font-bold text-gray-800">5</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow-md p-6 card-hover cursor-pointer" onclick="showPatientSearch()">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-green-100 rounded-lg">
+                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="font-semibold text-lg">Search Patients</h3>
+                            <p class="text-gray-600 text-sm">Find by name, ID, or phone</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6 card-hover cursor-pointer" onclick="showTasks()">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-yellow-100 rounded-lg">
+                            <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="font-semibold text-lg">Tasks</h3>
+                            <p class="text-gray-600 text-sm">View and manage tasks</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6 card-hover cursor-pointer" onclick="showReferrals()">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-purple-100 rounded-lg">
+                            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="font-semibold text-lg">Referrals</h3>
+                            <p class="text-gray-600 text-sm">Manage patient referrals</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6 card-hover cursor-pointer" onclick="showAnalytics()">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-indigo-100 rounded-lg">
+                            <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="font-semibold text-lg">Analytics</h3>
+                            <p class="text-gray-600 text-sm">Generate custom reports</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <!-- Reports by Specialist Chart -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Reports by Specialist</h3>
+                    <div class="chart-container">
+                        <canvas id="specialistChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Reports Over Time Chart -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Reports Over Time (Last 7 Days)</h3>
+                    <div class="chart-container">
+                        <canvas id="timeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search and Filter Section -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Search Reports</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <input type="text" id="searchQuery" placeholder="Search by patient name or keywords..." 
+                           class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <select id="searchSpecialist" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Specialists</option>
+                        {% for key, name in specialists.items() %}
+                        <option value="{{ key }}">{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                    <select id="searchStatus" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Status</option>
+                        <option value="new">New</option>
+                        <option value="reviewed">Reviewed</option>
+                        <option value="critical">Critical</option>
+                        <option value="follow-up">Follow-up Needed</option>
+                    </select>
+                    <button onclick="performSearch()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                        Search
+                    </button>
+                </div>
+                <div id="searchResults" class="hidden">
+                    <h3 class="text-lg font-semibold mb-3">Search Results</h3>
+                    <div id="searchResultsList"></div>
+                </div>
+            </div>
+
+            <!-- Recent Reports Table -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Recent Reports</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Specialist</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentReportsBody" class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-center text-gray-500">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals for New Features -->
+    <!-- Patient Search Modal -->
+    <div id="patientSearchModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Search Patients</h2>
+                <button onclick="closePatientSearch()" class="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            <input type="text" id="patientSearchInput" placeholder="Search by name, ID, or phone..." 
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4"
+                   onkeyup="searchPatients(this.value)">
+            <div id="patientSearchResults"></div>
+        </div>
+    </div>
+
+    <!-- Tasks Modal -->
+    <div id="tasksModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-5xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Task Management</h2>
+                <div>
+                    <button onclick="showCreateTask()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mr-2">New Task</button>
+                    <button onclick="closeTasks()" class="text-gray-500 hover:text-gray-700">✕</button>
+                </div>
+            </div>
+            <div class="mb-4 flex gap-4">
+                <button onclick="loadTasks('pending')" class="px-4 py-2 bg-yellow-100 text-yellow-800 rounded">Pending</button>
+                <button onclick="loadTasks('completed')" class="px-4 py-2 bg-green-100 text-green-800 rounded">Completed</button>
+                <button onclick="loadTasks('')" class="px-4 py-2 bg-gray-100 text-gray-800 rounded">All</button>
+            </div>
+            <div id="tasksList"></div>
+        </div>
+    </div>
+
+    <!-- Referrals Modal -->
+    <div id="referralsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-5xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Referrals</h2>
+                <div>
+                    <button onclick="showCreateReferral()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mr-2">New Referral</button>
+                    <button onclick="closeReferrals()" class="text-gray-500 hover:text-gray-700">✕</button>
+                </div>
+            </div>
+            <div id="referralsList"></div>
+        </div>
+    </div>
+
+    <!-- Analytics Modal -->
+    <div id="analyticsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Custom Analytics</h2>
+                <button onclick="closeAnalytics()" class="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Start Date</label>
+                    <input type="date" id="analyticsStartDate" class="w-full px-3 py-2 border rounded">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">End Date</label>
+                    <input type="date" id="analyticsEndDate" class="w-full px-3 py-2 border rounded">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Specialist</label>
+                    <select id="analyticsSpecialist" class="w-full px-3 py-2 border rounded">
+                        <option value="">All Specialists</option>
+                        {% for key, name in specialists.items() %}
+                        <option value="{{ key }}">{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <button onclick="generateAnalytics()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 mb-6">Generate Report</button>
+            <div id="analyticsResults"></div>
+        </div>
+    </div>
+
+    <script>
+        let specialistChart, timeChart;
+
+        // Load dashboard stats
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch('/api/dashboard/stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.stats;
+                    
+                    // Update stat cards
+                    document.getElementById('totalReports').textContent = stats.total_reports;
+                    document.getElementById('totalPatients').textContent = stats.total_patients;
+                    document.getElementById('totalDoctors').textContent = stats.total_doctors;
+                    
+                    // Charts
+                    updateSpecialistChart(stats.reports_by_specialist);
+                    updateTimeChart(stats.reports_over_time);
+                    
+                    // Recent reports
+                    updateRecentReports(stats.recent_reports);
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        function updateSpecialistChart(data) {
+            const ctx = document.getElementById('specialistChart').getContext('2d');
+            
+            const specialistNames = Object.keys(data).map(key => {
+                const names = {
+                    'cardiac': 'Cardiac',
+                    'radiologist': 'Radiologist',
+                    'neurologist': 'Neurologist',
+                    'dermatologist': 'Dermatologist',
+                    'oncologist': 'Oncologist'
+                };
+                return names[key] || key;
+            });
+            const counts = Object.values(data);
+            
+            if (specialistChart) specialistChart.destroy();
+            
+            specialistChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: specialistNames,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(139, 92, 246, 0.8)',
+                            'rgba(236, 72, 153, 0.8)',
+                            'rgba(249, 115, 22, 0.8)'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1.5,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTimeChart(data) {
+            const ctx = document.getElementById('timeChart').getContext('2d');
+            
+            const dates = data.map(d => {
+                const date = new Date(d.date);
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            });
+            const counts = data.map(d => d.count);
+            
+            if (timeChart) timeChart.destroy();
+            
+            timeChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Reports',
+                        data: counts,
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1.5,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateRecentReports(reports) {
+            const tbody = document.getElementById('recentReportsBody');
+            if (reports.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No reports yet</td></tr>';
+                return;
+            }
+            
+            const statusColors = {
+                'new': 'bg-blue-100 text-blue-800',
+                'reviewed': 'bg-green-100 text-green-800',
+                'critical': 'bg-red-100 text-red-800',
+                'follow-up': 'bg-yellow-100 text-yellow-800'
+            };
+            
+            tbody.innerHTML = reports.map(report => {
+                const date = new Date(report.created_at);
+                const specialistName = {
+                    'cardiac': 'Cardiac',
+                    'radiologist': 'Radiologist',
+                    'neurologist': 'Neurologist',
+                    'dermatologist': 'Dermatologist',
+                    'oncologist': 'Oncologist'
+                }[report.specialist_type] || report.specialist_type;
+                
+                const status = report.status || 'new';
+                const statusClass = statusColors[status] || statusColors['new'];
+                
+                return `
+                    <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/report/${report.id}'">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 hover:underline">${report.patient_name || 'Unknown'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${specialistName}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${report.doctor_name || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${date.toLocaleDateString()}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${statusClass}">${status}</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('searchQuery').value;
+            const specialist = document.getElementById('searchSpecialist').value;
+            const status = document.getElementById('searchStatus').value;
+            
+            const params = new URLSearchParams();
+            if (query) params.append('q', query);
+            if (specialist) params.append('specialist', specialist);
+            if (status) params.append('status', status);
+            
+            try {
+                const response = await fetch(`/api/search/reports?${params}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const resultsDiv = document.getElementById('searchResults');
+                    const resultsList = document.getElementById('searchResultsList');
+                    
+                    if (data.reports.length === 0) {
+                        resultsList.innerHTML = '<p class="text-gray-500">No reports found.</p>';
+                    } else {
+                        resultsList.innerHTML = data.reports.map(report => {
+                            const date = new Date(report.created_at);
+                            const statusColors = {
+                                'new': 'bg-blue-100 text-blue-800',
+                                'reviewed': 'bg-green-100 text-green-800',
+                                'critical': 'bg-red-100 text-red-800',
+                                'follow-up': 'bg-yellow-100 text-yellow-800'
+                            };
+                            const status = report.status || 'new';
+                            const statusClass = statusColors[status] || statusColors['new'];
+                            
+                            return `
+                                <div class="border border-gray-200 rounded-lg p-4 mb-3 hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/report/${report.id}'">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h4 class="font-semibold text-blue-600 hover:underline">${report.patient_name || 'Unknown'}</h4>
+                                            <p class="text-sm text-gray-600">${report.original_filename}</p>
+                                            <p class="text-xs text-gray-500">${date.toLocaleString()}</p>
+                                        </div>
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full ${statusClass}">${status}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                    
+                    resultsDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+        }
+
+        // ==================== NEW FEATURES FUNCTIONS ====================
+        
+        // Patient Search
+        function showPatientSearch() {
+            document.getElementById('patientSearchModal').classList.remove('hidden');
+        }
+        
+        function closePatientSearch() {
+            document.getElementById('patientSearchModal').classList.add('hidden');
+        }
+        
+        async function searchPatients(query) {
+            if (query.length < 2) {
+                document.getElementById('patientSearchResults').innerHTML = '';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/patients/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                let html = '<div class="space-y-2">';
+                if (data.patients && data.patients.length > 0) {
+                    data.patients.forEach(patient => {
+                        html += `
+                            <div class="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer" onclick="window.location.href='/patient/${patient.id}'">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <h3 class="font-semibold">${patient.name}</h3>
+                                        <p class="text-sm text-gray-600">ID: ${patient.id} | Phone: ${patient.phone || 'N/A'}</p>
+                                        ${patient.tags && patient.tags.length > 0 ? `
+                                            <div class="flex gap-2 mt-2">
+                                                ${Array.isArray(patient.tags) ? patient.tags.map(tag => `<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">${tag}</span>`).join('') : ''}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += '<p class="text-gray-500 text-center py-8">No patients found</p>';
+                }
+                html += '</div>';
+                document.getElementById('patientSearchResults').innerHTML = html;
+            } catch (error) {
+                console.error('Patient search error:', error);
+            }
+        }
+        
+        // Tasks Management
+        function showTasks() {
+            document.getElementById('tasksModal').classList.remove('hidden');
+            loadTasks('pending');
+        }
+        
+        function closeTasks() {
+            document.getElementById('tasksModal').classList.add('hidden');
+        }
+        
+        async function loadTasks(status = '') {
+            try {
+                const params = status ? `?status=${status}` : '';
+                const response = await fetch(`/api/tasks${params}`);
+                const data = await response.json();
+                
+                let html = '<div class="space-y-3">';
+                if (data.tasks && data.tasks.length > 0) {
+                    data.tasks.forEach(task => {
+                        const priorityColors = {
+                            'high': 'bg-red-100 text-red-800',
+                            'medium': 'bg-yellow-100 text-yellow-800',
+                            'low': 'bg-green-100 text-green-800'
+                        };
+                        html += `
+                            <div class="border rounded-lg p-4 ${task.status === 'completed' ? 'bg-gray-50 opacity-75' : ''}">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <h3 class="font-semibold ${task.status === 'completed' ? 'line-through' : ''}">${task.title}</h3>
+                                            <span class="px-2 py-1 ${priorityColors[task.priority] || 'bg-gray-100'} text-xs rounded">${task.priority}</span>
+                                            <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">${task.task_type}</span>
+                                        </div>
+                                        ${task.description ? `<p class="text-sm text-gray-600 mb-2">${task.description}</p>` : ''}
+                                        <div class="flex gap-4 text-xs text-gray-500">
+                                            ${task.patient_name ? `<span>Patient: ${task.patient_name}</span>` : ''}
+                                            ${task.due_date ? `<span>Due: ${task.due_date}</span>` : ''}
+                                            <span>Created: ${task.created_at ? new Date(task.created_at).toLocaleDateString() : ''}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        ${task.status !== 'completed' ? `
+                                            <button onclick="completeTask(${task.id})" class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">Complete</button>
+                                        ` : ''}
+                                        <button onclick="deleteTask(${task.id})" class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += '<p class="text-gray-500 text-center py-8">No tasks found</p>';
+                }
+                html += '</div>';
+                document.getElementById('tasksList').innerHTML = html;
+            } catch (error) {
+                console.error('Tasks load error:', error);
+            }
+        }
+        
+        async function completeTask(taskId) {
+            try {
+                const response = await fetch(`/api/tasks/${taskId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({status: 'completed'})
+                });
+                if (response.ok) {
+                    loadTasks();
+                }
+            } catch (error) {
+                console.error('Task complete error:', error);
+            }
+        }
+        
+        async function deleteTask(taskId) {
+            if (!confirm('Delete this task?')) return;
+            try {
+                const response = await fetch(`/api/tasks/${taskId}`, {method: 'DELETE'});
+                if (response.ok) {
+                    loadTasks();
+                }
+            } catch (error) {
+                console.error('Task delete error:', error);
+            }
+        }
+        
+        function showCreateTask() {
+            const form = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" id="createTaskModal">
+                    <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4">
+                        <h3 class="text-xl font-bold mb-4">Create New Task</h3>
+                        <form id="taskForm">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium mb-1">Title *</label>
+                                <input type="text" name="title" required class="w-full px-3 py-2 border rounded">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium mb-1">Description</label>
+                                <textarea name="description" rows="3" class="w-full px-3 py-2 border rounded"></textarea>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Task Type</label>
+                                    <select name="task_type" class="w-full px-3 py-2 border rounded">
+                                        <option value="follow-up">Follow-up</option>
+                                        <option value="appointment">Appointment</option>
+                                        <option value="review">Review</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Priority</label>
+                                    <select name="priority" class="w-full px-3 py-2 border rounded">
+                                        <option value="low">Low</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium mb-1">Due Date</label>
+                                <input type="date" name="due_date" class="w-full px-3 py-2 border rounded">
+                            </div>
+                            <div class="flex justify-end gap-4">
+                                <button type="button" onclick="this.closest('#createTaskModal').remove()" class="px-6 py-2 border rounded">Cancel</button>
+                                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Create</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', form);
+            document.getElementById('taskForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+                try {
+                    const response = await fetch('/api/tasks', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(data)
+                    });
+                    if (response.ok) {
+                        document.getElementById('createTaskModal').remove();
+                        loadTasks();
+                    }
+                } catch (error) {
+                    alert('Error creating task');
+                }
+            });
+        }
+        
+        // Referrals
+        function showReferrals() {
+            document.getElementById('referralsModal').classList.remove('hidden');
+            loadReferrals();
+        }
+        
+        function closeReferrals() {
+            document.getElementById('referralsModal').classList.add('hidden');
+        }
+        
+        async function loadReferrals() {
+            try {
+                const response = await fetch('/api/referrals');
+                const data = await response.json();
+                
+                let html = '<div class="space-y-3">';
+                if (data.referrals && data.referrals.length > 0) {
+                    data.referrals.forEach(ref => {
+                        const statusColors = {
+                            'pending': 'bg-yellow-100 text-yellow-800',
+                            'accepted': 'bg-green-100 text-green-800',
+                            'rejected': 'bg-red-100 text-red-800'
+                        };
+                        html += `
+                            <div class="border rounded-lg p-4">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <h3 class="font-semibold">Patient: ${ref.patient_name}</h3>
+                                            <span class="px-2 py-1 ${statusColors[ref.status] || 'bg-gray-100'} text-xs rounded">${ref.status}</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mb-1">From: ${ref.from_doctor_name} → To: ${ref.to_specialist_type}${ref.to_doctor_name ? ` (${ref.to_doctor_name})` : ''}</p>
+                                        ${ref.reason ? `<p class="text-sm mb-1"><strong>Reason:</strong> ${ref.reason}</p>` : ''}
+                                        ${ref.notes ? `<p class="text-sm text-gray-600"><strong>Notes:</strong> ${ref.notes}</p>` : ''}
+                                        <p class="text-xs text-gray-500 mt-2">${new Date(ref.created_at).toLocaleString()}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += '<p class="text-gray-500 text-center py-8">No referrals found</p>';
+                }
+                html += '</div>';
+                document.getElementById('referralsList').innerHTML = html;
+            } catch (error) {
+                console.error('Referrals load error:', error);
+            }
+        }
+        
+        function showCreateReferral() {
+            alert('Referral creation form - implement with patient search and specialist selection');
+        }
+        
+        // Analytics
+        function showAnalytics() {
+            document.getElementById('analyticsModal').classList.remove('hidden');
+        }
+        
+        function closeAnalytics() {
+            document.getElementById('analyticsModal').classList.add('hidden');
+        }
+        
+        async function generateAnalytics() {
+            const startDate = document.getElementById('analyticsStartDate').value;
+            const endDate = document.getElementById('analyticsEndDate').value;
+            const specialist = document.getElementById('analyticsSpecialist').value;
+            
+            const params = new URLSearchParams();
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+            if (specialist) params.append('specialist_type', specialist);
+            
+            try {
+                const response = await fetch(`/api/analytics/reports?${params}`);
+                const data = await response.json();
+                
+                let html = '<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr>';
+                html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Specialist</th>';
+                html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Reports</th>';
+                html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unique Patients</th>';
+                html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Critical</th>';
+                html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reviewed</th>';
+                html += '</tr></thead><tbody class="bg-white divide-y divide-gray-200">';
+                
+                if (data.analytics && data.analytics.length > 0) {
+                    data.analytics.forEach(item => {
+                        html += `<tr>
+                            <td class="px-6 py-4 whitespace-nowrap font-semibold">${item.specialist_type}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${item.total_reports}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${item.unique_patients}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-red-600 font-semibold">${item.critical_reports}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-green-600 font-semibold">${item.reviewed_reports}</td>
+                        </tr>`;
+                    });
+                } else {
+                    html += '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No data found</td></tr>';
+                }
+                html += '</tbody></table></div>';
+                document.getElementById('analyticsResults').innerHTML = html;
+            } catch (error) {
+                console.error('Analytics error:', error);
+            }
+        }
+
+        // Load stats on page load
+        loadDashboardStats();
+        setInterval(loadDashboardStats, 60000); // Refresh every minute
+    </script>
+</body>
+</html>

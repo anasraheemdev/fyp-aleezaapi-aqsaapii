@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Appointments - NeuraX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='neurax-theme.css') }}">
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    <!-- Sidebar -->
+    <div class="fixed inset-y-0 left-0 w-64 neurax-sidebar text-white shadow-xl z-50 overflow-y-auto">
+        <div class="p-6 border-b border-indigo-400 border-opacity-30">
+            <div class="mb-4">
+                <h2 class="neurax-logo text-2xl font-extrabold text-white">Neura<span
+                        class="neurax-logo-accent">X</span></h2>
+                <p class="text-xs text-indigo-200 text-center">Healthcare Intelligence</p>
+            </div>
+        </div>
+        <nav class="mt-4">
+            <a href="/patient/dashboard" class="neurax-sidebar-item flex items-center px-6 py-3">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                    </path>
+                </svg>
+                Dashboard
+            </a>
+            <a href="/patient/appointments" class="neurax-sidebar-item active flex items-center px-6 py-3">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                    </path>
+                </svg>
+                My Appointments
+            </a>
+            <a href="/patient/chat" class="neurax-sidebar-item flex items-center px-6 py-3">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                    </path>
+                </svg>
+                Chat with Doctors
+            </a>
+            <a href="/profile" class="neurax-sidebar-item flex items-center px-6 py-3">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                My Profile
+            </a>
+            <a href="/logout"
+                class="neurax-sidebar-item flex items-center px-6 py-3 text-red-200 hover:bg-red-600 hover:bg-opacity-30 transition absolute bottom-0 w-full border-t border-indigo-400 border-opacity-30">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                    </path>
+                </svg>
+                Logout
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="ml-64 p-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800">My Appointments</h1>
+                <button onclick="showBookAppointmentModal()" class="neurax-button px-6 py-3 rounded-lg">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Book New Appointment
+                </button>
+            </div>
+
+            <!-- Appointments List -->
+            <div id="appointmentsList" class="bg-white rounded-lg shadow-md p-6">
+                <div class="text-center text-gray-500 py-8">
+                    <p>Loading appointments...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Book Appointment Modal -->
+    <div id="bookAppointmentModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-bold">Book Appointment</h3>
+                <button onclick="closeBookAppointmentModal()"
+                    class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400">Close</button>
+            </div>
+            <form id="bookAppointmentForm">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Select Doctor *</label>
+                    <select id="doctorSelect" name="doctor_id" required
+                        class="w-full px-3 py-2 border rounded"></select>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Date *</label>
+                        <input type="date" name="appointment_date" required id="appointmentDate"
+                            class="w-full px-3 py-2 border rounded">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Time *</label>
+                        <input type="time" name="appointment_time" required class="w-full px-3 py-2 border rounded">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Duration (minutes)</label>
+                        <input type="number" name="duration" value="30" min="15" step="15"
+                            class="w-full px-3 py-2 border rounded">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Type</label>
+                        <select name="appointment_type" class="w-full px-3 py-2 border rounded">
+                            <option value="consultation">Consultation</option>
+                            <option value="follow-up">Follow-up</option>
+                            <option value="checkup">Checkup</option>
+                            <option value="emergency">Emergency</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Reason</label>
+                    <textarea name="reason" rows="3" class="w-full px-3 py-2 border rounded"
+                        placeholder="Brief reason for appointment"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Notes</label>
+                    <textarea name="notes" rows="2" class="w-full px-3 py-2 border rounded"
+                        placeholder="Any additional notes"></textarea>
+                </div>
+                <button type="submit" class="w-full neurax-button py-3 rounded-lg">
+                    Book Appointment
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Set minimum date to tomorrow
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAppointments();
+            loadDoctorsList();
+            const dateInput = document.getElementById('appointmentDate');
+            if (dateInput) {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                dateInput.min = tomorrow.toISOString().split('T')[0];
+            }
+        });
+
+        async function loadAppointments() {
+            try {
+                const response = await fetch('/api/appointments');
+                const data = await response.json();
+
+                let html = '';
+                if (data.appointments && data.appointments.length > 0) {
+                    html = '<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr>';
+                    html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>';
+                    html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>';
+                    html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Doctor</th>';
+                    html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>';
+                    html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>';
+                    html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>';
+                    html += '</tr></thead><tbody class="bg-white divide-y divide-gray-200">';
+
+                    data.appointments.forEach(apt => {
+                        const statusColors = {
+                            'pending': 'bg-yellow-100 text-yellow-800',
+                            'scheduled': 'bg-blue-100 text-blue-800',
+                            'confirmed': 'bg-green-100 text-green-800',
+                            'completed': 'bg-gray-100 text-gray-800',
+                            'cancelled': 'bg-red-100 text-red-800',
+                            'rejected': 'bg-red-100 text-red-800'
+                        };
+                        const statusLabels = {
+                            'pending': 'Pending Approval',
+                            'scheduled': 'Confirmed',
+                            'confirmed': 'Confirmed',
+                            'completed': 'Completed',
+                            'cancelled': 'Cancelled',
+                            'rejected': 'Rejected'
+                        };
+                        html += `<tr>
+                            <td class="px-6 py-4 whitespace-nowrap">${new Date(apt.appointment_date).toLocaleDateString()}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${apt.appointment_time}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${apt.doctor_name || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${apt.appointment_type || 'consultation'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs rounded ${statusColors[apt.status] || 'bg-gray-100'}">${statusLabels[apt.status] || apt.status || 'Pending'}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                ${apt.status === 'pending' || apt.status === 'scheduled' || apt.status === 'confirmed' ?
+                                `<button onclick="cancelAppointment(${apt.id})" class="text-red-600 hover:text-red-900">Cancel</button>` :
+                                '<span class="text-gray-400">No actions</span>'}
+                            </td>
+                        </tr>`;
+                    });
+                    html += '</tbody></table></div>';
+                } else {
+                    html = '<div class="text-center py-12"><p class="text-gray-500 text-lg">No appointments found</p><p class="text-gray-400 mt-2">Book your first appointment to get started!</p></div>';
+                }
+                document.getElementById('appointmentsList').innerHTML = html;
+            } catch (error) {
+                console.error('Appointments load error:', error);
+                document.getElementById('appointmentsList').innerHTML = '<div class="text-center text-red-500 py-8">Error loading appointments. Please try again.</div>';
+            }
+        }
+
+        async function loadDoctorsList() {
+            try {
+                const response = await fetch('/api/doctors');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+
+                const select = document.getElementById('doctorSelect');
+                if (!select) return;
+
+                select.innerHTML = '<option value="">Select a Doctor</option>';
+
+                if (data.doctors && data.doctors.length > 0) {
+                    data.doctors.forEach(doctor => {
+                        const option = document.createElement('option');
+                        option.value = doctor.id;
+                        option.textContent = `${doctor.name || 'Doctor'} - ${doctor.specialist_type || 'General'}`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">No doctors available</option>';
+                }
+            } catch (error) {
+                console.error('Doctors load error:', error);
+            }
+        }
+
+        function showBookAppointmentModal() {
+            document.getElementById('bookAppointmentModal').classList.remove('hidden');
+            loadDoctorsList();
+            const dateInput = document.getElementById('appointmentDate');
+            if (dateInput) {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                dateInput.min = tomorrow.toISOString().split('T')[0];
+                dateInput.value = '';
+            }
+        }
+
+        function closeBookAppointmentModal() {
+            document.getElementById('bookAppointmentModal').classList.add('hidden');
+            const form = document.getElementById('bookAppointmentForm');
+            if (form) form.reset();
+        }
+
+        async function cancelAppointment(appointmentId) {
+            if (!confirm('Are you sure you want to cancel this appointment?')) return;
+
+            try {
+                const response = await fetch(`/api/appointments/${appointmentId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'cancelled' })
+                });
+
+                if (response.ok) {
+                    alert('Appointment cancelled successfully');
+                    loadAppointments();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Error cancelling appointment');
+                }
+            } catch (error) {
+                console.error('Cancel appointment error:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        document.getElementById('bookAppointmentForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            const doctorId = formData.get('doctor_id');
+            const appointmentDate = formData.get('appointment_date');
+            const appointmentTime = formData.get('appointment_time');
+
+            if (!doctorId || !appointmentDate || !appointmentTime) {
+                alert('Please fill in all required fields (Doctor, Date, and Time)');
+                return;
+            }
+
+            const data = {
+                doctor_id: parseInt(doctorId),
+                appointment_date: appointmentDate,
+                appointment_time: appointmentTime,
+                duration: parseInt(formData.get('duration') || 30),
+                appointment_type: formData.get('appointment_type') || 'consultation',
+                reason: formData.get('reason') || '',
+                notes: formData.get('notes') || ''
+            };
+
+            console.log('Sending appointment data:', data);
+
+            try {
+                const response = await fetch('/api/appointments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const responseData = await response.json();
+                console.log('Appointment response:', responseData);
+
+                if (response.ok) {
+                    alert('Appointment booked successfully!');
+                    closeBookAppointmentModal();
+                    loadAppointments();
+                } else {
+                    alert(responseData.error || 'Error booking appointment');
+                }
+            } catch (error) {
+                console.error('Appointment booking error:', error);
+                alert('Error: ' + (error.message || 'Failed to book appointment. Please try again.'));
+            }
+        });
+    </script>
+</body>
+
+</html>

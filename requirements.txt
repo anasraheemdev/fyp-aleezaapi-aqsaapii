@@ -1,0 +1,26 @@
+# Core Flask dependencies
+flask>=2.3.0
+werkzeug>=2.3.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# Groq AI API
+groq>=0.4.0
+
+# Image processing
+Pillow>=10.0.0
+
+# PDF processing
+PyMuPDF>=1.23.0
+
+# Numerical operations
+numpy>=1.24.0
+
+# Optional OCR (choose one or both)
+# paddleocr>=2.7.0  # Uncomment if you want PaddleOCR (requires paddlepaddle)
+# pytesseract>=0.3.10  # Uncomment if you want Tesseract OCR
+
+# Optional Clinical BERT (for advanced medical analysis)
+# transformers>=4.35.0  # Uncomment for Clinical BERT
+# torch>=2.0.0  # Uncomment for Clinical BERT

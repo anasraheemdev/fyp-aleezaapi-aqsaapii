@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor's Medical Report Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Doctor's Medical Report Analyzer</h1>
+            <p class="text-gray-600">Upload a patient's test report to extract text and receive AI-powered medical analysis</p>
+        </div>
+
+        <!-- Upload Form -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Upload Report</h2>
+            <form id="uploadForm" enctype="multipart/form-data" class="space-y-4">
+                <div>
+                    <label for="patient_name" class="block text-sm font-medium text-gray-700 mb-2">
+                        Patient Name <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="patient_name" 
+                        name="patient_name" 
+                        required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter patient name"
+                    >
+                </div>
+                
+                <div>
+                    <label for="file" class="block text-sm font-medium text-gray-700 mb-2">
+                        Report File <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="file" 
+                        id="file" 
+                        name="file" 
+                        required
+                        accept=".png,.jpg,.jpeg,.pdf"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                    <p class="mt-1 text-sm text-gray-500">Accepted formats: PNG, JPG, JPEG, PDF (Max 16MB)</p>
+                    <p class="mt-1 text-xs text-yellow-600 bg-yellow-50 p-2 rounded">
+                        <strong>Note:</strong> Text-based PDFs work immediately. For image files or scanned PDFs, OCR backend (Tesseract) may need to be installed separately.
+                    </p>
+                </div>
+                
+                <button 
+                    type="submit" 
+                    id="submitBtn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-md transition duration-200 shadow-md"
+                >
+                    Analyze Report
+                </button>
+            </form>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8 text-center">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
+            <p class="text-blue-700 font-medium">Analyzing report... This may take a moment.</p>
+        </div>
+
+        <!-- Error Display -->
+        <div id="errorDisplay" class="hidden bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
+            <p id="errorMessage" class="text-red-700"></p>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden space-y-6">
+            <!-- Extracted Text -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Extracted Text</h2>
+                <div id="extractedText" class="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-96 overflow-y-auto">
+                    <pre class="whitespace-pre-wrap text-sm text-gray-700 font-mono"></pre>
+                </div>
+            </div>
+
+            <!-- AI Analysis -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">AI Medical Analysis</h2>
+                <div id="llmAnalysis" class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                    <div class="text-gray-800 whitespace-pre-wrap leading-relaxed"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const errorDisplay = document.getElementById('errorDisplay');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultsSection = document.getElementById('resultsSection');
+        const extractedTextDiv = document.querySelector('#extractedText pre');
+        const llmAnalysisDiv = document.querySelector('#llmAnalysis div');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Reset UI
+            resultsSection.classList.add('hidden');
+            errorDisplay.classList.add('hidden');
+            loadingIndicator.classList.remove('hidden');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processing...';
+
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'An error occurred');
+                }
+
+                // Display results
+                extractedTextDiv.textContent = data.extracted_text;
+                llmAnalysisDiv.textContent = data.llm_analysis;
+                resultsSection.classList.remove('hidden');
+                
+            } catch (error) {
+                errorMessage.textContent = error.message;
+                errorDisplay.classList.remove('hidden');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Analyze Report';
+            }
+        });
+    </script>
+</body>
+</html>
+
